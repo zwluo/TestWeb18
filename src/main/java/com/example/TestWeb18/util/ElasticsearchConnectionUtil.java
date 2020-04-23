@@ -7,24 +7,15 @@ import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.TransportAddress;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 
 public class ElasticsearchConnectionUtil
@@ -37,9 +28,9 @@ public class ElasticsearchConnectionUtil
 
     private static Logger logger = LoggerFactory.getLogger(ElasticsearchConnectionUtil.class);
 
-    private RestHighLevelClient client = null;
+    private RestHighLevelClient client;
 
-    private static ElasticsearchConnectionUtil elasticsearchConnectionUtil = null;
+    private static ElasticsearchConnectionUtil elasticsearchConnectionUtil;
 
     static {
         elasticsearchConnectionUtil = new ElasticsearchConnectionUtil();
@@ -51,9 +42,7 @@ public class ElasticsearchConnectionUtil
     }
 
     private static RestHighLevelClient getClient() {
-        RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(new HttpHost(HOSTNAME, PORT, SCHEME)));
-
-        return client;
+        return new RestHighLevelClient(RestClient.builder(new HttpHost(HOSTNAME, PORT, SCHEME)));
     }
 
     public void save(String index, String type, String documentId, Map<String, Object> jsonMap) throws IOException {
@@ -76,8 +65,7 @@ public class ElasticsearchConnectionUtil
         }
         GetRequest getRequest = new GetRequest(index, type, id);
         GetResponse getResponse = client.get(getRequest, RequestOptions.DEFAULT);
-        Map<String, Object> map = getResponse.getSource();
-        return map;
+        return getResponse.getSource();
     }
 
     public boolean isExist(String index, String type, String id) throws IOException {
@@ -87,8 +75,7 @@ public class ElasticsearchConnectionUtil
 
         GetRequest getRequest = new GetRequest(index, type, id);
 
-        boolean exists = client.exists(getRequest, RequestOptions.DEFAULT);
-        return exists;
+        return client.exists(getRequest, RequestOptions.DEFAULT);
     }
 
     public void update(String index, String type, String id, Map<String, Object> jsonMap) throws IOException {
@@ -118,8 +105,8 @@ public class ElasticsearchConnectionUtil
 
     }
 
-    public static void main(String[] args) throws IOException {
-        logger.info("开始连接ES.");
+    public static void main(String[] args) {
+        /*logger.info("开始连接ES.");
         Settings settings = Settings.builder().put("", "").put("cluster.name", "myClusterName").build();
 
         // on startup
@@ -154,7 +141,7 @@ public class ElasticsearchConnectionUtil
         // on shutdown
 
         client.close();
-        logger.info("关闭ES连接.");
+        logger.info("关闭ES连接.");*/
 
     }
 
