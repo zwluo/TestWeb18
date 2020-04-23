@@ -1,11 +1,15 @@
 package com.example.TestWeb18.util;
 
 import org.apache.http.HttpHost;
-import org.elasticsearch.action.DocWriteRequest;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -13,23 +17,15 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.index.VersionType;
-import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class ElasticsearchConnectionUtil
 {
@@ -55,82 +51,88 @@ public class ElasticsearchConnectionUtil
     }
 
     private static RestHighLevelClient getClient() {
-        RestHighLevelClient client = new RestHighLevelClient(
-                RestClient.builder(
-                        new HttpHost(HOSTNAME, PORT, SCHEME)
-
-
-
-                        ));
+        RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(new HttpHost(HOSTNAME, PORT, SCHEME)));
 
         return client;
     }
 
     public void save(String index, String type, String documentId, Map<String, Object> jsonMap) throws IOException {
-        if(this.client == null) {
+        if (this.client == null) {
             this.client = getClient();
         }
 
-        //IndexResponse indexResponse = new IndexResponse();
-
-        /*jsonMap.put("user", "datou");
-        jsonMap.put("postDate", new Date());
-        jsonMap.put("message", "trying out Elasticsearch2");*/
-        IndexRequest indexRequest = new IndexRequest(index).type(type)
-                .source(jsonMap);
+        IndexRequest indexRequest = new IndexRequest(index, type, documentId);
+        indexRequest.source(jsonMap);
 
         IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
 
-        String index2 = indexResponse.getIndex();
-        String id2 = indexResponse.getId();
-
-        System.out.println("save success: id=" + id2);
+        System.out.println("result: " + indexResponse.getResult());
 
     }
 
-    public void get(String index, String type, String id) {
-        if(this.client == null) {
+    public Map<String, Object> get(String index, String type, String id) throws IOException {
+        if (this.client == null) {
+            this.client = getClient();
+        }
+        GetRequest getRequest = new GetRequest(index, type, id);
+        GetResponse getResponse = client.get(getRequest, RequestOptions.DEFAULT);
+        Map<String, Object> map = getResponse.getSource();
+        return map;
+    }
+
+    public boolean isExist(String index, String type, String id) throws IOException {
+        if (this.client == null) {
             this.client = getClient();
         }
 
-        Map<String, Object> jsonMap = new HashMap<>();
-        jsonMap.put("user", "jimmy");
-        jsonMap.put("postDate", new Date());
-        jsonMap.put("message", "trying out Elasticsearch2");
-        IndexRequest indexRequest = new IndexRequest("posts")
-                .id("4").source(jsonMap);
+        GetRequest getRequest = new GetRequest(index, type, id);
 
+        boolean exists = client.exists(getRequest, RequestOptions.DEFAULT);
+        return exists;
+    }
+
+    public void update(String index, String type, String id, Map<String, Object> jsonMap) throws IOException {
+        if (this.client == null) {
+            this.client = getClient();
+        }
+
+        UpdateRequest request = new UpdateRequest(index, type, id);
+        request.doc(jsonMap);
+
+        UpdateResponse updateResponse = client.update(request, RequestOptions.DEFAULT);
+
+        System.out.println("result: " + updateResponse.getResult());
+
+    }
+
+    public void delete(String index, String type, String id) throws IOException {
+        if (this.client == null) {
+            this.client = getClient();
+        }
+
+        DeleteRequest request = new DeleteRequest(index, type, id);
+
+        DeleteResponse deleteResponse = client.delete(request, RequestOptions.DEFAULT);
+
+        System.out.println("result: " + deleteResponse.getResult());
 
     }
 
     public static void main(String[] args) throws IOException {
         logger.info("开始连接ES.");
-        Settings settings = Settings.builder()
-                .put("", "")
-                .put("cluster.name", "myClusterName").build();
+        Settings settings = Settings.builder().put("", "").put("cluster.name", "myClusterName").build();
 
         // on startup
         TransportClient client = new PreBuiltTransportClient(Settings.EMPTY)
                 //.addTransportAddress(new TransportAddress(InetAddress.getByName("LUOZHIWEI"), 9300));
                 .addTransportAddress(new TransportAddress(new InetSocketAddress(HOSTNAME, PORT)));
 
-
-
         Map<String, Object> json = new HashMap<String, Object>();
-        json.put("user","kimchy");
-        json.put("postDate",new Date());
-        json.put("message","trying out Elasticsearch");
+        json.put("user", "kimchy");
+        json.put("postDate", new Date());
+        json.put("message", "trying out Elasticsearch");
 
-
-        IndexResponse response3 = client.prepareIndex("twitter", "_doc", "1")
-                .setSource(XContentFactory.jsonBuilder()
-                        .startObject()
-                        .field("user", "kimchy")
-                        .field("postDate", new Date())
-                        .field("message", "trying out Elasticsearch")
-                        .endObject()
-                )
-                .get();
+        IndexResponse response3 = client.prepareIndex("twitter", "_doc", "1").setSource(XContentFactory.jsonBuilder().startObject().field("user", "kimchy").field("postDate", new Date()).field("message", "trying out Elasticsearch").endObject()).get();
 
         GetResponse response = client.prepareGet("twitter", "_doc", "1").get();
 
