@@ -1,12 +1,11 @@
 package com.example.TestWeb18;
 
+import com.example.TestWeb18.entity.TblOrders;
 import com.example.TestWeb18.util.ElasticsearchConnectionUtil;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class TestES
 {
@@ -70,6 +69,29 @@ public class TestES
         String type = "_doc";
         String id = "3ZX3pXEBeqV-LU34P23b";
         es.delete(index, type, id);
+    }
+
+    @Test
+    public void testBulkSave() throws IOException {
+        ElasticsearchConnectionUtil es = ElasticsearchConnectionUtil.getElasticsearchConnectionUtil();
+
+        List<TblOrders> list = new ArrayList<TblOrders>();
+        TblOrders tblOrder = new TblOrders();
+        tblOrder.setOrderId("111-222-112");
+        tblOrder.setStoreId(48);
+        tblOrder.setOrderNumber(10003);
+        tblOrder.setAddress("US2");
+        list.add(tblOrder);
+
+        TblOrders tblOrder2 = new TblOrders();
+        tblOrder2.setOrderId("111-222-113");
+        tblOrder2.setStoreId(48);
+        tblOrder2.setOrderNumber(10004);
+        tblOrder2.setAddress("Russia2");
+        list.add(tblOrder2);
+
+        es.bulkSave(list);
+
     }
 
 }

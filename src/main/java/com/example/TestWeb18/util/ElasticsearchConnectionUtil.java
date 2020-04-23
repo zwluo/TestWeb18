@@ -1,6 +1,12 @@
 package com.example.TestWeb18.util;
 
+import com.example.TestWeb18.entity.AbstractIndex;
+import com.example.TestWeb18.entity.TblOrders;
 import org.apache.http.HttpHost;
+import org.elasticsearch.action.bulk.BulkItemRequest;
+import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetRequest;
@@ -16,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 public class ElasticsearchConnectionUtil
@@ -103,6 +110,26 @@ public class ElasticsearchConnectionUtil
 
         System.out.println("result: " + deleteResponse.getResult());
 
+    }
+
+    public void bulkSave(List<? extends AbstractIndex> list) throws IOException {
+        if(list == null || list.size() == 0) {
+            return;
+        }
+
+        if (this.client == null) {
+            this.client = getClient();
+        }
+        System.out.println(list.get(0).getClass().getSimpleName().toLowerCase());
+
+        BulkRequest request = new BulkRequest();
+        for(AbstractIndex temp: list) {
+            request.add(new IndexRequest(list.get(0).getClass().getSimpleName().toLowerCase()).type("_doc").source(temp.getJsonMap()));
+        }
+        BulkResponse bulkResponse = client.bulk(request, RequestOptions.DEFAULT);
+        for(BulkItemResponse bulkItemResponse: bulkResponse) {
+            System.out.println("result: " + bulkItemResponse.getResponse());
+        }
     }
 
     public static void main(String[] args) {
