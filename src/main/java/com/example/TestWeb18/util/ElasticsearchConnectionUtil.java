@@ -122,10 +122,18 @@ public class ElasticsearchConnectionUtil
         }
         System.out.println(list.get(0).getClass().getSimpleName().toLowerCase());
 
+        int count = 0;
         BulkRequest request = new BulkRequest();
         for(AbstractIndex temp: list) {
+            count++;
             request.add(new IndexRequest(list.get(0).getClass().getSimpleName().toLowerCase()).type("_doc").source(temp.getJsonMap()));
+            if(count % 10000 == 0) {
+                client.bulk(request, RequestOptions.DEFAULT);
+                request = new BulkRequest();
+            }
         }
+        client.bulk(request, RequestOptions.DEFAULT);
+
         BulkResponse bulkResponse = client.bulk(request, RequestOptions.DEFAULT);
         for(BulkItemResponse bulkItemResponse: bulkResponse) {
             System.out.println("result: " + bulkItemResponse.getResponse());
